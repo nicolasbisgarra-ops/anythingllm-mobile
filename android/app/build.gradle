@@ -50,6 +50,14 @@ android {
             abiFilters "arm64-v8a"
         }
     }
+    // Forks and local sideload builds don't have the Play upload key. Fall back to the debug
+    // keystore so `assembleRelease` still produces an installable APK instead of failing.
+    def releaseKeystore = file("anythingllm-upload-key.keystore")
+    def hasReleaseKeystore = releaseKeystore.exists() && project.env.get("APP_RELEASE_STORE_PASSWORD")
+    if (!hasReleaseKeystore) {
+        logger.warn("[signing] anythingllm-upload-key.keystore or APP_RELEASE_STORE_PASSWORD missing - signing release with the debug keystore (not valid for Play uploads).")
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -71,7 +79,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.release
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             // Ship native debug symbols in the AAB so Play Console can symbolicate native (llama.rn) crashes

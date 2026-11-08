@@ -1,6 +1,20 @@
 import { StyleSheet, View, Text } from "react-native";
+import MathView from "@/components/MathView";
 
 export const markdownRules = {
+    // LaTeX math (see utils/latex/markdownItMath), typeset with MathJax like ChatGPT/KaTeX.
+    // Leaf nodes get the parents' text styles (body colour, heading size...) as `inheritedStyles`
+    math_inline: (node, _children, _parent, styles, inheritedStyles = {}) => (
+        <MathView key={node.key} tex={node.content} textStyle={[inheritedStyles, styles.text]} />
+    ),
+    // Display math is normally lifted into `math_block`; this only covers leftovers (e.g. inside table cells)
+    math_display: (node, _children, _parent, styles, inheritedStyles = {}) => (
+        <MathView key={node.key} tex={node.content} textStyle={[inheritedStyles, styles.text]} />
+    ),
+    math_block: (node, _children, _parent, styles) => (
+        <MathView key={node.key} tex={node.content} display textStyle={[styles.body, styles.text]} />
+    ),
+
     // Horizontal Rule
     hr: (node, _children, _parent, _styles) => (
         <View key={node.key} style={[{ backgroundColor: 'rgba(178,221,255,0.2)', height: 1 }]} />

@@ -5,12 +5,14 @@ import { type WorkspaceChatResponseType } from '@/database/models/WorkspaceChat'
 import { markdownRules, markdownStyles } from './rules';
 import { useTranslation } from 'react-i18next';
 import { formatDuration, formatGroupedNumber, formatNumber } from '@/utils/formatters';
+import markdownItMath from '@/utils/latex/markdownItMath';
 
 /**
  * One parser for every message. The library builds a fresh MarkdownIt instance
  * per render when none is supplied, which is wasted work on every stream flush.
+ * The math plugin turns `$...$` / `$$...$$` LaTeX into tokens rendered by `markdownRules`.
  */
-const markdownIt = MarkdownIt({ typographer: true, linkify: true });
+const markdownIt = MarkdownIt({ typographer: true, linkify: true }).use(markdownItMath);
 
 export default memo(function TextResponseContainer({
   uuid,

@@ -83,7 +83,7 @@ class PushNotifications {
         notifee.createChannel({
             id: 'anythingllm-channel',
             name: 'AnythingLLM',
-        }).then(createdChannelId => this.channels.primary = createdChannelId);
+        }).then(createdChannelId => { this.channels.primary = createdChannelId; });
 
         // Progress channel to prevent vibration/sounds
         notifee.createChannel({
@@ -92,7 +92,7 @@ class PushNotifications {
             vibration: false,
             importance: 3,
             vibrationPattern: [],
-        }).then(createdChannelId => this.channels.progress = createdChannelId);
+        }).then(createdChannelId => { this.channels.progress = createdChannelId; });
 
         // Chat replies finishing while the app is in the background. High importance so it
         // heads-up on the lock screen, with a single short buzz rather than the default pattern.
@@ -105,7 +105,7 @@ class PushNotifications {
             vibration: true,
             vibrationPattern: [50, 250],
             sound: 'default',
-        }).then(createdChannelId => this.channels.chat = createdChannelId);
+        }).then(createdChannelId => { this.channels.chat = createdChannelId; });
 
         // A scheduled job finished with something to show. Same heads-up treatment as chat replies.
         notifee.createChannel({
@@ -116,7 +116,7 @@ class PushNotifications {
             vibration: true,
             vibrationPattern: [50, 250],
             sound: 'default',
-        }).then(createdChannelId => this.channels.jobs = createdChannelId);
+        }).then(createdChannelId => { this.channels.jobs = createdChannelId; });
     }
 
     /**
