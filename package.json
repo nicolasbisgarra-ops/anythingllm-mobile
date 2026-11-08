@@ -9,6 +9,7 @@
     "android": "node scripts/checkBrandFonts.js && react-native run-android",
     "dev:install:android": "node scripts/checkBrandFonts.js && node scripts/devAndroidInstall.js",
     "build:android:release": "node scripts/checkBrandFonts.js && node scripts/buildAndroidRelease.js",
+    "build:android:apk": "node scripts/checkBrandFonts.js && cd android && ./gradlew assembleRelease",
     "clean:android": "cd android && ./gradlew clean && cd ..",
     "clean": "yarn clean:android",
     "lint": "eslint src App.tsx index.js",
