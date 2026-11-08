@@ -71,6 +71,7 @@
     "llama.rn": "0.12.9",
     "mammoth": "^1.12.3",
     "marked": "^5.0.5",
+    "mathjax-full": "3.2.2",
     "mobx": "^6.12.3",
     "mobx-persist-store": "^1.1.5",
     "mobx-react": "^9.2.2",

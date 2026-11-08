@@ -13,7 +13,7 @@
 // markdown-it ships without type definitions in this project
 type StateInline = any;
 type StateBlock = any;
-type MarkdownIt = { inline: { ruler: any }; block: { ruler: any } };
+type MarkdownIt = { inline: { ruler: any }; block: { ruler: any }; core: { ruler: any } };
 
 /** Index of `needle` in `src` from `from`, skipping backslash-escaped occurrences */
 function findUnescaped(src: string, needle: string, from: number): number {
@@ -149,10 +149,66 @@ function mathBlock(state: StateBlock, startLine: number, endLine: number, silent
   return true;
 }
 
+/**
+ * Display math written mid-paragraph (`Since y > 0:\n$$y = ...$$\nso ...`) is lifted out
+ * into its own `math_block`, splitting the paragraph around it, so it can be centered on
+ * its own line instead of being squeezed into the text flow.
+ */
+function splitDisplayMath(state: any) {
+  const out: any[] = [];
+  const tokens: any[] = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const open = tokens[i - 1];
+    const close = tokens[i + 1];
+    const children: any[] = token.children || [];
+    if (
+      token.type !== 'inline' ||
+      open?.type !== 'paragraph_open' ||
+      close?.type !== 'paragraph_close' ||
+      !children.some(child => child.type === 'math_display')
+    ) {
+      out.push(token);
+      continue;
+    }
+
+    out.pop(); // paragraph_open, re-emitted per segment
+    let segment: any[] = [];
+    const flush = () => {
+      while (segment.length && /break$/.test(segment[0].type)) segment.shift();
+      while (segment.length && /break$/.test(segment[segment.length - 1].type)) segment.pop();
+      if (segment.length && segment.some(t => t.type !== 'text' || t.content.trim() !== '')) {
+        const pOpen = new state.Token('paragraph_open', 'p', 1);
+        Object.assign(pOpen, { block: true, hidden: open.hidden, level: open.level, map: open.map });
+        const inline = new state.Token('inline', '', 0);
+        Object.assign(inline, { children: segment, level: token.level, map: token.map, content: '' });
+        const pClose = new state.Token('paragraph_close', 'p', -1);
+        Object.assign(pClose, { block: true, hidden: close.hidden, level: close.level });
+        out.push(pOpen, inline, pClose);
+      }
+      segment = [];
+    };
+    for (const child of children) {
+      if (child.type !== 'math_display') {
+        segment.push(child);
+        continue;
+      }
+      flush();
+      const block = new state.Token('math_block', 'math', 0);
+      Object.assign(block, { block: true, content: child.content, markup: child.markup, level: open.level, map: open.map });
+      out.push(block);
+    }
+    flush();
+    i++; // skip paragraph_close
+  }
+  state.tokens = out;
+}
+
 export default function markdownItMath(md: MarkdownIt) {
   // Before `escape`, otherwise `\(` and `\[` are consumed as escaped punctuation
   md.inline.ruler.before('escape', 'math_inline', mathInline);
   md.block.ruler.before('fence', 'math_block', mathBlock, {
     alt: ['paragraph', 'reference', 'blockquote', 'list'],
   });
+  md.core.ruler.after('inline', 'math_split_display', splitDisplayMath);
 }

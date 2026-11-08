@@ -1,12 +1,8 @@
 /**
- * Lightweight LaTeX -> Unicode converter for rendering math in chat messages.
- *
- * Models (especially small on-device ones) answer math questions in LaTeX. A full TeX
- * layout engine (MathJax/KaTeX) would need a WebView or several MB of JS and re-layout on
- * every streamed token, so instead we translate the common subset of LaTeX math into plain
- * Unicode text: `\int_0^2 \sqrt{9x - 35}\,dx` -> `∫₀² √(9x − 35) dx`. Anything we don't
- * recognise degrades to its readable source (command name without the backslash), never
- * to an error.
+ * Lightweight LaTeX -> Unicode converter, the fallback for math MathJax can't typeset
+ * (see `utils/latex/mathjax.ts`): `\int_0^2 \sqrt{9x - 35}\,dx` -> `∫₀² √(9x − 35) dx`.
+ * Anything we don't recognise degrades to its readable source (command name without the
+ * backslash), never to an error.
  */
 
 const SYMBOLS: Record<string, string> = {

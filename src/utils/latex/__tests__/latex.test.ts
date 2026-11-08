@@ -1,5 +1,6 @@
 import { latexToUnicode } from '../toUnicode';
 import markdownItMath from '../markdownItMath';
+import { typesetTex } from '../mathjax';
 
 const MarkdownIt = require('markdown-it');
 
@@ -71,6 +72,25 @@ describe('markdownItMath', () => {
     ]);
   });
 
+  it('lifts display math written mid-paragraph into its own block', () => {
+    const tokens = md.parse('We get $$x^2$$ and so \\[y\\] done.', {});
+    expect(tokens.map((t: any) => [t.type, t.content])).toEqual([
+      ['paragraph_open', ''],
+      ['inline', ''],
+      ['paragraph_close', ''],
+      ['math_block', 'x^2'],
+      ['paragraph_open', ''],
+      ['inline', ''],
+      ['paragraph_close', ''],
+      ['math_block', 'y'],
+      ['paragraph_open', ''],
+      ['inline', ''],
+      ['paragraph_close', ''],
+    ]);
+    expect(tokens[1].children.map((t: any) => t.content)).toEqual(['We get ']);
+    expect(tokens[9].children.map((t: any) => t.content)).toEqual([' done.']);
+  });
+
   it('turns a $$ line right after text into a display block', () => {
     const tokens = md.parse("Since we're given $y > 0$:\n$$y = \\sqrt{4(x-4)^3}$$", {});
     expect(tokens.map((t: any) => t.type)).toEqual(['paragraph_open', 'inline', 'paragraph_close', 'math_block']);
@@ -87,5 +107,28 @@ describe('markdownItMath', () => {
   it('leaves an unterminated $$ (still streaming) as text', () => {
     const tokens = md.parse('$$\\int_0^2', {});
     expect(tokens.map((t: any) => t.type)).toEqual(['paragraph_open', 'inline', 'paragraph_close']);
+  });
+});
+
+describe('typesetTex', () => {
+  it('typesets inline and display math to SVG with em-based metrics', () => {
+    const inline = typesetTex('y^2 = 4(x-4)^3', false)!;
+    expect(inline.svg.startsWith('<svg')).toBe(true);
+    expect(inline.svg).toContain('currentColor');
+    expect(inline.width).toBeGreaterThan(5);
+    expect(inline.height).toBeGreaterThan(0.8);
+    expect(inline.depth).toBeGreaterThan(0.1);
+
+    const display = typesetTex("L = \\int_a^b \\sqrt{1 + [f'(x)]^2}\\, dx", true)!;
+    expect(display.height).toBeGreaterThan(inline.height);
+  });
+
+  it('returns null for TeX it cannot parse so callers can fall back', () => {
+    expect(typesetTex('\\notamacro{x}', false)).toBeNull();
+    expect(typesetTex('\\frac{1}{', true)).toBeNull();
+  });
+
+  it('caches results', () => {
+    expect(typesetTex('a+b', false)).toBe(typesetTex('a+b', false));
   });
 });
