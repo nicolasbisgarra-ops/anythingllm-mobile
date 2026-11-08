@@ -1,6 +1,27 @@
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { latexToUnicode } from "@/utils/latex/toUnicode";
+
+// Serif reads as math and has the widest Unicode math coverage on Android (Noto Serif / Noto Sans Math)
+const MATH_FONT = 'serif';
+
+const MathBlock = ({ content }: { content: string }) => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} style={{ marginVertical: 6 }}>
+        <Text selectable style={{ color: 'white', fontFamily: MATH_FONT, fontSize: 17, lineHeight: 26, textAlign: 'center' }}>{latexToUnicode(content)}</Text>
+    </ScrollView>
+);
 
 export const markdownRules = {
+    // LaTeX math (see utils/latex/markdownItMath): rendered as Unicode text
+    // Leaf nodes get the parents' text styles (body colour, heading size...) as `inheritedStyles`
+    math_inline: (node, _children, _parent, styles, inheritedStyles = {}) => (
+        <Text key={node.key} style={[inheritedStyles, styles.text, { fontFamily: MATH_FONT }]}>{latexToUnicode(node.content)}</Text>
+    ),
+    // Display math inside a paragraph: on its own line(s) within the surrounding text
+    math_display: (node, _children, _parent, styles, inheritedStyles = {}) => (
+        <Text key={node.key} style={[inheritedStyles, styles.text, { fontFamily: MATH_FONT }]}>{`\n${latexToUnicode(node.content)}\n`}</Text>
+    ),
+    math_block: (node, _children, _parent, _styles) => <MathBlock key={node.key} content={node.content} />,
+
     // Horizontal Rule
     hr: (node, _children, _parent, _styles) => (
         <View key={node.key} style={[{ backgroundColor: 'rgba(178,221,255,0.2)', height: 1 }]} />
